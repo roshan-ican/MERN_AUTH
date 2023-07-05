@@ -1,15 +1,17 @@
 const User = require('../models/User')
-const Note = require('../models/Note')
 
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+
+
 
 const signUp = asyncHandler(async (req, res) => {
     const {
         fullName,
         emailAddress,
         password,
+        confirmPassword,
         dateOfBirth,
         phoneNumber,
         address,
@@ -22,7 +24,7 @@ const signUp = asyncHandler(async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!emailAddress || !password || !fullName ||  !dateOfBirth || !phoneNumber || !address || !city || !state || !securityQuestion || !securityAnswer || !zipCode || !country) {
+    if (!emailAddress || !password || !confirmPassword || !fullName ||  !dateOfBirth || !phoneNumber || !address || !city || !state || !securityQuestion || !securityAnswer || !zipCode || !country) {
         return res.status(400).json({ message: 'All the fields are required' });
     }
 
@@ -62,7 +64,6 @@ const signUp = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
     const { emailAddress, password } = req.body
-    console.log(req.body, 'USER------------------------------------');
     if (!emailAddress || !password) {
         return res.status(400).json({ message: 'All fields are required' })
     }
@@ -71,7 +72,6 @@ const login = asyncHandler(async (req, res) => {
     if (!foundUser) {
         return res.status(401).json({ message: 'Invalid credentials' });
     }
-    console.log(foundUser, 'USER');
     const match = await bcrypt.compare(password, foundUser.password)
     if (!match) return res.status(401).json({ message: 'Unauthorization' })
     // ACCESS TOKEN AND REFRESH TOKEN
@@ -82,21 +82,10 @@ const login = asyncHandler(async (req, res) => {
             },
         },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: '1m' }
+        { expiresIn: '5m' }
     )
-    const refreshToken = jwt.sign(
-        { "emailAddress": foundUser.emailAddress },
-        process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: '1d' }
-    )
-    // CREATING REFRESH COOKIE WITH REFRESH TOKEN
-    res.cookie('jwt', refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'None',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-    })
-    res.json({accessToken})
+
+    res.json({accessToken, ...foundUser._doc})
 })
 const refresh = (req, res) => {
     const cookies = req.cookies

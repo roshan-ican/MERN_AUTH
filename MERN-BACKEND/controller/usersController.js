@@ -1,5 +1,4 @@
 const User = require('../models/User')
-const Note = require('../models/Note')
 
 const mongoose = require('mongoose')
 const asyncHandler = require('express-async-handler')
@@ -7,6 +6,30 @@ const bcrypt = require('bcrypt')
 
 //@ desc GET all users
 //@ route GET / users
+const getUser = asyncHandler(async (req, res) => {
+    try {
+
+
+        
+        const id = req.params.id;
+
+
+    
+
+      // Retrieve the user data based on the email address
+      const user = await User.findById(id).select('-password').lean();
+    
+      if (!user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+    
+      res.json(user);
+    } catch (error) {
+
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
 
 const getAllUsers = asyncHandler(async (req, res) => {
     const users = await User.find().select('-password').lean()
@@ -15,10 +38,6 @@ const getAllUsers = asyncHandler(async (req, res) => {
     }
     res.json(users)
 })
-
-
-//@ route POST / users
-
 
 
 
@@ -94,4 +113,4 @@ const deleteUser = asyncHandler(async (req, res) => {
 });
 
 
-module.exports = { getAllUsers, updateUser, deleteUser }
+module.exports = { getAllUsers, updateUser, deleteUser, getUser }
